@@ -1,0 +1,25 @@
+name: Вопрос или решение
+description: Обсудить концепцию, границы MVP или технический выбор
+title: "[Обсуждение] "
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Что нужно решить?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Предложение и причина
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Какие документы и сценарии затронуты?
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Итог после обсуждения
+      description: Заполнить после принятия решения; указать дату и участников.

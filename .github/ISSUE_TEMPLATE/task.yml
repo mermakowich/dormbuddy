@@ -1,0 +1,24 @@
+name: Задача
+description: Работа по документации или реализации
+title: "[Задача] "
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Цель и результат
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Критерии готовности
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Зависимости и ссылки
+  - type: textarea
+    id: checks
+    attributes:
+      label: Как проверить?
