@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "forms.html" import field, select_field %}
+{% from "listing_components.html" import favorite_button, summary %}
+{% set heading = 'Жильё' if view == 'feed' else 'Избранное' if view == 'favorites' else 'Общее жильё' %}
+{% block title %}{{ heading }} · DormBuddy{% endblock %}
+{% block content %}
+<div class="page-heading"><h1>{{ heading }}</h1>
+  <p>{{ 'Учебные варианты аренды в Москве.' if view == 'feed' else 'Варианты, которые ты сохранил(а).' if view == 'favorites' else 'Вы оба сохранили эти объявления. Совпадение с ' ~ partner ~ '.' }}</p>
+</div>
+{% if view == 'shared' %}
+  <p class="mode-strip"><a href="/matches">← К совпадениям</a></p>
+{% else %}
+  <div class="mode-strip"><div class="tabs" aria-label="Разделы жилья">
+    <a href="/housing" {% if view == 'feed' %}aria-current="true"{% endif %}>Все объявления</a>
+    <a href="/housing/favorites" {% if view == 'favorites' %}aria-current="true"{% endif %}>Избранное</a>
+  </div></div>
+{% endif %}
+{% if view == 'feed' %}
+  <form class="surface form-section housing-filters" action="/housing" method="get">
+    <h2>Фильтры</h2>
+    {% if errors %}<p class="field-error" role="alert">Проверь отмеченные поля.</p>{% endif %}
+    <div class="form-grid">
+      {{ field('location', 'Район или метро', values, errors) }}
+      {{ select_field('kind', 'Тип жилья', kinds.items(), values.kind, errors, 'Любой') }}
+      {{ field('minimum', 'Доля от, ₽', values, errors, 'number') }}
+      {{ field('maximum', 'Доля до, ₽', values, errors, 'number') }}
+      {{ select_field('pets', 'Питомцы допустимы', [('yes', 'Да'), ('no', 'Нет')], values.pets, errors, 'Неважно') }}
+      {{ select_field('smoking', 'Курение допустимо', [('yes', 'Да'), ('no', 'Нет')], values.smoking, errors, 'Неважно') }}
+    </div>
+    <div class="actions">
+      <button class="button primary" type="submit">Применить</button>
+      {% if current_query %}<a href="/housing">Сбросить фильтры</a>{% endif %}
+    </div>
+  </form>
+{% endif %}
+{% if listings %}
+  <div class="listing-grid">
+    {% for listing in listings %}
+      <article class="surface listing-card">
+        <h2><a href="/housing/{{ listing.id }}">{{ listing.title }}</a></h2>
+        {{ summary(listing, kinds, share) }}
+        <div class="actions">
+          <a class="button secondary" href="/housing/{{ listing.id }}">Подробнее</a>
+          {% if view != 'shared' %}{{ favorite_button(listing, favorites, csrf, view, current_query or '') }}{% endif %}
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+{% elif not errors %}
+  <section class="surface empty">
+    <h2>{{ 'Общих вариантов пока нет' if view == 'shared' else 'В избранном пока пусто' if view == 'favorites' else 'Варианты не найдены' }}</h2>
+    <p>{{ 'Здесь будут объявления, которые вы оба добавили в избранное.' if view == 'shared' else 'Сохраняй понравившиеся варианты из ленты.' if view == 'favorites' else 'Попробуй изменить район, стоимость или другие фильтры.' }}</p>
+    <a class="button secondary" href="/housing">{{ 'Сбросить фильтры' if view == 'feed' else 'Смотреть жильё' }}</a>
+  </section>
+{% endif %}
+{% endblock %}

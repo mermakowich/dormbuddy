@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Соседи · DormBuddy{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <h1>Соседи</h1>
+  <p>Найди человека, с которым комфортно жить.</p>
+</div>
+<div class="mode-strip">
+  <div class="tabs" aria-label="Режим подбора">
+    <a href="/profile?mode=rent#mode" {% if profile.mode == 'rent' %}aria-current="true"{% endif %}>Аренда</a>
+    <a href="/dormitory" {% if profile.mode == 'dorm' %}aria-current="true"{% endif %}>Общежитие</a>
+  </div>
+  <a href="{{ '/dormitory' if profile.mode == 'dorm' else '/profile' }}">Изменить анкету</a>
+</div>
+{% if profile.mode == 'dorm' and profile.university %}
+  <div class="notice">
+    <strong>{{ profile.university.name }}{% if profile.dormitory %} · {{ profile.dormitory.name }}{% endif %}</strong>
+    <div>{{ 'Поиск по всем общежитиям вуза.' if profile.dorm_scope == 'university' else 'Поиск в твоём общежитии.' }}
+    Расселением занимается вуз.</div>
+  </div>
+{% endif %}
+{% if matched %}<p class="notice success" role="status">У вас взаимная симпатия! <a href="/matches">Открыть совпадения</a></p>{% endif %}
+{% if not ready %}
+  <section class="surface empty illustrated">
+    <div>
+      <h2>Заполни условия подбора</h2>
+      <p>Добавь имя, бюджет аренды или своё общежитие и ответь на вопросы о курении и питомцах.</p>
+      <div class="actions"><a class="button primary" href="/profile">Заполнить анкету</a><a class="button secondary" href="/housing">Смотреть жильё</a></div>
+    </div>
+    <img src="/static/mascot.png" width="1081" height="831" alt="">
+  </section>
+{% elif not recommendation %}
+  <section class="surface empty illustrated">
+    <div>
+      <h2>Подходящих анкет пока нет</h2>
+      <p>Можно обновить условия или вернуться к подбору позже.</p>
+      <a class="button secondary" href="/profile">Изменить анкету</a>
+    </div>
+    <img src="/static/mascot.png" width="1081" height="831" alt="">
+  </section>
+{% else %}
+  <article class="surface candidate">
+    <div class="candidate-header">
+      <div class="identity">
+        <span class="avatar" aria-hidden="true">{{ candidate.display_name[0] }}</span>
+        <div><h2>{{ candidate.display_name }}</h2>
+          <p class="muted">
+            {% if candidate.mode == 'dorm' %}{{ candidate.university.name }} · {{ candidate.dormitory.name }}
+            {% else %}{% if candidate.district %}{{ candidate.district }} · {% endif %}{{ candidate.budget_min | rubles }}–{{ candidate.budget_max | rubles }} / мес.
+            {% endif %}
+          </p>
+        </div>
+      </div>
+      <div class="score">
+        {% if recommendation.display_score is not none %}
+          <strong>{{ recommendation.display_score }}<span>%</span></strong><span>Совместимость</span>
+        {% else %}<strong class="no-score">Недостаточно данных</strong>{% endif %}
+      </div>
+    </div>
+    <div class="candidate-info">
+      <section>
+        <h3>Обязательные условия</h3>
+        <ul class="check-list">
+          {% for reason in recommendation.conditions %}<li>{{ reason }}</li>{% endfor %}
+        </ul>
+      </section>
+      <section>
+        <h3>Бытовые привычки</h3>
+        <p class="muted">Сопоставлено {{ recommendation.comparisons | length }} из {{ preference_count }} предпочтений.</p>
+        {% if recommendation.comparisons %}
+          <ul class="comparison-list">
+            {% for item in recommendation.comparisons %}
+              <li>
+                <span class="comparison-mark {{ 'same' if item.similarity == 1 else 'different' }}" aria-hidden="true">{{ '✓' if item.similarity == 1 else '≠' }}</span>
+                <div><strong>{{ item.label }}</strong>
+                  {% if item.similarity == 1 %}<span>Совпадение · {{ item.own }}</span>
+                  {% else %}<span>Ты: {{ item.own }}. {{ candidate.display_name }}: {{ item.other }}.</span>{% endif %}
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}<p>Пока нет привычек, отмеченных вами обоими.</p>{% endif %}
+      </section>
+    </div>
+    <form action="/neighbors/{{ candidate.user_id }}/swipe" method="post" class="candidate-actions">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="button secondary" type="submit" name="action" value="skip">Пропустить</button>
+      <button class="button primary" type="submit" name="action" value="like"><span aria-hidden="true">♥</span> Нравится</button>
+    </form>
+  </article>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Ошибка · DormBuddy{% endblock %}
+{% block content %}
+<section class="surface empty">
+  <h1>{{ message }}</h1>
+  <a class="button primary" href="{{ '/neighbors' if signed_in else '/login' }}">
+    {{ 'К соседям' if signed_in else 'Ко входу' }}
+  </a>
+</section>
+{% endblock %}

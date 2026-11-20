@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% from "listing_components.html" import favorite_button, summary %}
+{% block title %}{{ listing.title }} · DormBuddy{% endblock %}
+{% block content %}
+<p class="mode-strip"><a href="/housing">← Все объявления</a></p>
+<article class="surface listing-card listing-detail">
+  <h1>{{ listing.title }}</h1>
+  {{ summary(listing, kinds, share) }}
+  <p>{{ listing.description }}</p>
+  <p class="notice">Данные вымышлены для демонстрации сервиса.</p>
+  {{ favorite_button(listing, favorites, csrf, 'detail') }}
+</article>
+{% endblock %}

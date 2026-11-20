@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Buddy · DormBuddy{% endblock %}
+{% block content %}
+<div class="page-heading"><h1>AI Buddy</h1><p>Помощник по переезду и студенческому быту.</p></div>
+<div class="buddy-layout">
+  <section class="surface buddy-chat" aria-label="Диалог с Buddy">
+    {% if not configured %}<p class="notice danger">Buddy пока недоступен. Вопросы можно сохранить и повторить, когда подключится сервис ответов.</p>{% endif %}
+    {% if busy %}<p class="notice" role="status">Buddy готовит ответ. <a href="/buddy">Обновить историю</a></p>{% endif %}
+    {% if messages %}
+      <ol class="conversation">
+        {% for turn in messages %}
+        <li id="turn-{{ turn.id }}">
+          <div class="bubble user-bubble"><strong>Ты</strong><p>{{ turn.question }}</p></div>
+          {% if turn.status == 'answered' %}
+            <div class="bubble buddy-bubble"><strong>Buddy</strong><p>{{ turn.answer }}</p></div>
+          {% elif turn.status == 'pending' and turn.started_at >= cutoff %}
+            <p class="notice" role="status">Buddy готовит ответ. <a href="/buddy">Обновить историю</a></p>
+          {% else %}
+            <div class="notice danger" role="alert">
+              Не удалось получить ответ. Вопрос сохранён.
+              <form method="post" action="/buddy" data-wait="Повторяем…">
+                <input type="hidden" name="csrf" value="{{ csrf }}">
+                <input type="hidden" name="request_id" value="{{ turn.request_id }}">
+                <input type="hidden" name="retry" value="1">
+                <button type="submit" class="button secondary">Повторить вопрос</button>
+              </form>
+            </div>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+    {% else %}
+      <p class="chat-intro">Задай вопрос о первых днях на новом месте или выбери один из готовых.</p>
+    {% endif %}
+    <form method="post" action="/buddy" class="stack" data-wait="Отправляем…">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="hidden" name="request_id" value="{{ request_id }}">
+      <label class="field" for="question">Твой вопрос
+        <textarea id="question" name="question" rows="3" maxlength="1200" required
+          placeholder="Например, что взять с собой в общежитие?" {% if error %}aria-invalid="true" aria-describedby="question-error"{% endif %}>{{ question }}</textarea>
+      </label>
+      {% if error %}<p id="question-error" class="field-error" role="alert">{{ error }}</p>{% endif %}
+      <div class="actions"><button class="button primary" type="submit">Отправить</button></div>
+    </form>
+  </section>
+  <aside class="surface buddy-prompts">
+    <img src="/static/mascot.png" width="1081" height="831" alt="">
+    <h2>С чего начать</h2>
+    <div class="prompt-list">
+      {% for prompt in prompts %}<button type="button" class="button secondary" data-prompt>{{ prompt }}</button>{% endfor %}
+    </div>
+  </aside>
+</div>
+{% endblock %}

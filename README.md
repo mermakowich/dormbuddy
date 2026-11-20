@@ -2,7 +2,7 @@
 
 Соседи, жильё и помощь после переезда — в одном студенческом сервисе.
 
-**Учебный проект по практикуму Python · пилот: Москва · стадия: согласование концепции**
+**Учебный проект по практикуму Python · пилот: Москва · стадия: разработка MVP**
 
 ![Как устроен DormBuddy](assets/diagrams/product-overview.svg)
 
@@ -35,18 +35,65 @@
 - AI Buddy — контекстный помощник по переезду и быту.
 - Если подходящих API жилья нет, используем тестовую базу; интеграции и монетизацию откладываем.
 
-На этой основе планируем первую версию. Формулу score, стек и распределение работы ещё уточняем; тему и объём проекта предстоит согласовать с преподавателем.
+Овчинников одобрил тему DormBuddy после просмотра README. Мы начали разработку по рабочим [границам MVP](docs/04-mvp.md). Подробности фиксируем в [журнале решений](docs/08-decisions.md).
 
-## Ближайшие шаги
+## Локальный запуск
 
-- Уточняем [границы MVP](docs/04-mvp.md) и [открытые вопросы](docs/08-decisions.md).
-- Согласуем тему и объём проекта с Овчинниковым.
-- Распределяем ответственность и определяем сроки первого спринта.
+Нужны Python 3.12+, [uv](https://docs.astral.sh/uv/) и Docker Compose. Из корня репозитория выполни:
 
-Вопросы обсуждаем в Issues, принятые решения фиксируем в документации.
+```bash
+cp -n .env.example .env
+uv sync --locked
+uv run python - <<'PY'
+from pathlib import Path
+from secrets import token_urlsafe
 
-## Текущее состояние
+path = Path('.env')
+contents = path.read_text()
+placeholder = 'SESSION_SECRET=demo-placeholder-replace-with-a-random-secret'
+if placeholder in contents.splitlines():
+    path.write_text(contents.replace(placeholder, 'SESSION_SECRET=' + token_urlsafe(48), 1))
+PY
+docker compose up -d --wait
+uv run alembic upgrade head
+export DORMBUDDY_DEMO_PASSWORD='DormBuddy-demo-2026'
+uv run python -m dormbuddy.seed
+uv run uvicorn dormbuddy.main:app --host 127.0.0.1 --port 8000
+```
 
-Пока собрали документацию и исходные материалы. К реализации приложения, интеграций и тестов ещё не приступили. Персоны и сценарии используем как рабочие гипотезы; исследование пользователей и подготовка демонстрационных данных впереди.
+Открой [http://127.0.0.1:8000](http://127.0.0.1:8000). Ключ сессии хранится в локальном `.env`, поэтому он доступен и из нового окна терминала. Для запуска за HTTPS установи `COOKIE_SECURE=true`. Если порт БД занят, согласуй `POSTGRES_PORT` и порт в `DATABASE_URL`.
+
+### Демо
+
+| Аккаунт | Что показать |
+| --- | --- |
+| `alisa@example.com` | Борис, объяснение score, первое «Нравится» |
+| `boris@example.com` | Ответный лайк Алисе и одно общее сохранённое объявление |
+| `nadya@example.com` | Олег в первом общежитии МИСИС, Соня после выбора второго |
+
+Пароль всех демо-аккаунтов задаёт `DORMBUDDY_DEMO_PASSWORD` при первом seed. Повторный seed добавляет отсутствующие данные и сохраняет изменения существующих анкет, паролей и избранного. Наполняй только локальную демонстрационную БД. Полный порядок показа описан в [сценарии защиты](docs/07-demo-and-quality.md).
+
+### Buddy
+
+Используем API, совместимый с OpenAI Chat Completions. Настройки `BUDDY_BASE_URL`, `BUDDY_MODEL`, `BUDDY_API_KEY` и `BUDDY_TIMEOUT` (секунды) читаются из окружения или локального `.env`. По умолчанию URL указывает на OpenAI, модель — `gpt-4o-mini`. Без ключа Buddy сохраняет вопрос и показывает кнопку повтора. Остальные разделы работают независимо.
+
+### Проверки
+
+```bash
+uv run alembic check
+uv run pytest -q
+```
+
+Интеграционные тесты используют PostgreSQL из `DATABASE_URL`. Им нужен пользователь БД с правом создавать временные схемы. Тесты применяют миграцию в отдельной схеме и удаляют эту схему по завершении.
+
+На отдельной, только что наполненной демобазе можно пройти браузерный сценарий. Он меняет демо-анкеты и лайки, сохраняет скриншоты в `/tmp/dormbuddy-screenshots` и проверяет состояние Buddy при пустом `BUDDY_API_KEY`.
+
+```bash
+uv run playwright install chromium
+export DORMBUDDY_DEMO_PASSWORD='DormBuddy-demo-2026'
+uv run python tests/browser_smoke.py
+```
+
+При необходимости задай `DORMBUDDY_BROWSER_URL`, `DORMBUDDY_CHROMIUM` (путь к установленному Chromium) или `DORMBUDDY_SCREENSHOTS`.
 
 [Как вносить изменения](CONTRIBUTING.md) · [История изменений](CHANGELOG.md)

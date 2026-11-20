@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Совпадения · DormBuddy{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <h1>Совпадения</h1>
+  <p>Здесь появятся соседи, с которыми у вас взаимная симпатия.</p>
+</div>
+{% if matches %}
+  <div class="stack">
+    {% for id, name in matches %}
+      <article class="surface match-item">
+        <div class="identity">
+          <span class="avatar" aria-hidden="true">{{ name[0] }}</span>
+          <h2>{{ name }}</h2>
+        </div>
+        <a class="button secondary" href="/matches/{{ id }}/housing">Общее жильё</a>
+      </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <section class="surface empty">
+    <h2>Пока нет взаимных симпатий</h2>
+    <p>Совпадение появится, когда вы оба выберете «Нравится».</p>
+    <a class="button primary" href="/neighbors">К соседям</a>
+  </section>
+{% endif %}
+{% endblock %}

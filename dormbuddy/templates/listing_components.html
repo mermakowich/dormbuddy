@@ -1,0 +1,23 @@
+{% macro summary(listing, kinds, share) %}
+  <div class="listing-meta"><span>{{ kinds[listing.kind] }}</span><span class="training">Учебное объявление</span></div>
+  <p class="listing-location">{{ listing.district }} · м. {{ listing.metro }}</p>
+  <p class="listing-price"><strong>{{ share(listing) | rubles }}</strong> / мес. за жильца</p>
+  <dl class="listing-costs">
+    <div><dt>Вся аренда</dt><dd>{{ listing.total_rent | rubles }} / мес.</dd></div>
+    <div><dt>Число жильцов</dt><dd>{{ listing.occupants }}</dd></div>
+    <div><dt>Доп. расходы на всё жильё</dt><dd>{{ listing.extras | rubles }} / мес.</dd></div>
+  </dl>
+  <p class="listing-rules">{{ 'С питомцами можно' if listing.allows_pets else 'Без питомцев' }} · {{ 'Курение разрешено' if listing.allows_smoking else 'Без курения' }}</p>
+{% endmacro %}
+
+{% macro favorite_button(listing, favorites, csrf, source, query='') %}
+<form action="/housing/{{ listing.id }}/favorite{% if query %}?{{ query }}{% endif %}" method="post">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input type="hidden" name="source" value="{{ source }}">
+  {% set saved = listing.id in favorites %}
+  <button type="submit" name="action" value="{{ 'remove' if saved else 'add' }}" class="button secondary">
+    <span aria-hidden="true">{{ '★' if saved else '☆' }}</span>
+    {{ 'Убрать из избранного' if saved else 'В избранное' }}
+  </button>
+</form>
+{% endmacro %}

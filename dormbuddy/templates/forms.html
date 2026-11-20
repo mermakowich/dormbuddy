@@ -1,0 +1,28 @@
+{% macro issue(key, errors) %}
+  {% if errors.get(key) %}<small id="{{ key }}-error" class="field-error">{{ errors[key] }}</small>{% endif %}
+{% endmacro %}
+
+{% macro invalid(key, errors) %}
+  {% if errors.get(key) %}aria-invalid="true" aria-describedby="{{ key }}-error"{% endif %}
+{% endmacro %}
+
+{% macro field(key, label, values, errors, type='text', limit=80, required=false) %}
+  <label class="field" for="{{ key }}">
+    {{ label }}
+    <input id="{{ key }}" name="{{ key }}" type="{{ type }}" value="{{ values.get(key, '') }}"
+      {% if type == 'number' %}min="1" max="1000000" step="1"{% else %}maxlength="{{ limit }}"{% endif %}
+      {% if required %}required{% endif %} {{ invalid(key, errors) }}>
+    {{ issue(key, errors) }}
+  </label>
+{% endmacro %}
+
+{% macro select_field(key, label, options, value, errors, blank='Без ответа') %}
+  <label class="field" for="{{ key }}">
+    {{ label }}
+    <select id="{{ key }}" name="{{ key }}" {{ invalid(key, errors) }}>
+      {% if blank is not none %}<option value="">{{ blank }}</option>{% endif %}
+      {% for id, name in options %}<option value="{{ id }}" {% if id|string == value %}selected{% endif %}>{{ name }}</option>{% endfor %}
+    </select>
+    {{ issue(key, errors) }}
+  </label>
+{% endmacro %}

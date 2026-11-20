@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% from "forms.html" import field, select_field, issue, invalid %}
+{% block title %}Профиль · DormBuddy{% endblock %}
+{% block content %}
+<div class="page-heading with-action">
+  <div><h1>Профиль и анкета</h1><p>Расскажи о своих условиях и бытовых привычках.</p></div>
+  <form action="/logout" method="post"><input type="hidden" name="csrf" value="{{ csrf }}">
+    <button class="button secondary" type="submit">Выйти</button>
+  </form>
+</div>
+{% if saved %}<div class="notice success" role="status">Анкета сохранена. <a href="/neighbors">Посмотреть рекомендации</a></div>{% endif %}
+{% if errors %}<p class="notice danger" role="alert">Проверь отмеченные поля.</p>{% endif %}
+<form method="post" action="/profile" class="stack" data-profile>
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <section class="surface form-section">
+    <h2>Где ищешь соседа</h2>
+    <div class="form-grid">
+      {{ field('display_name', 'Имя для соседей', values, errors, required=true) }}
+      {{ select_field('mode', 'Режим подбора', [('rent', 'Аренда'), ('dorm', 'Общежитие')], values.mode, errors, none) }}
+      <div data-mode="rent">
+        {{ field('district', 'Район Москвы', values, errors) }}
+      </div>
+      {{ select_field('university_id', 'Вуз', university_choices, values.university_id, errors, 'Выбери вуз') }}
+      <div class="form-grid span-all" data-mode="dorm">
+        <label class="field" for="dormitory_id">Общежитие
+          <select id="dormitory_id" name="dormitory_id" {{ invalid('dormitory_id', errors) }}>
+            <option value="">Выбери общежитие</option>
+            {% for university in universities %}
+              <optgroup label="{{ university.name }}" data-university="{{ university.id }}">
+                {% for dorm in university.dormitories %}
+                  <option value="{{ dorm.id }}" {% if dorm.id|string == values.dormitory_id %}selected{% endif %}>{{ dorm.name }}</option>
+                {% endfor %}
+              </optgroup>
+            {% endfor %}
+          </select>
+          {{ issue('dormitory_id', errors) }}
+        </label>
+        {{ select_field('dorm_scope', 'Где искать', [('dormitory', 'В моём общежитии'), ('university', 'Во всех общежитиях моего вуза')], values.dorm_scope or 'dormitory', errors, none) }}
+        <p class="muted span-all">Мы помогаем найти потенциального соседа. Расселением занимается вуз.</p>
+      </div>
+      <div class="form-grid span-all" data-mode="rent">
+        <p class="muted span-all">Месячная доля аренды на одного жильца, без дополнительных расходов.</p>
+        {{ field('budget_min', 'Бюджет от, ₽', values, errors, 'number') }}
+        {{ field('budget_max', 'Бюджет до, ₽', values, errors, 'number') }}
+      </div>
+    </div>
+  </section>
+  <section class="surface form-section">
+    <h2>Обязательные условия</h2>
+    <p class="muted">Чтобы получить рекомендации, ответь на все четыре вопроса.</p>
+    <div class="form-grid">
+      {% for key, name in habits.items() %}
+        {{ select_field(key, name, [('yes', 'Да'), ('no', 'Нет')], values[key], errors) }}
+      {% endfor %}
+    </div>
+  </section>
+  <section class="surface form-section">
+    <h2>Бытовые предпочтения</h2>
+    <p class="muted">Выбери то, что уже знаешь о себе. Остальное можно заполнить позже.</p>
+    <div class="form-grid">
+      {{ select_field('sleep', 'Режим сна', sleep.items(), values.sleep, errors) }}
+      {% for key, (name, options) in scales.items() %}
+        {{ select_field(key, name, scale_choices[key], values[key], errors) }}
+      {% endfor %}
+    </div>
+  </section>
+  <section class="surface form-section">
+    <h2>Контекст для Buddy</h2>
+    <p class="muted">Используется в твоём диалоге с Buddy.</p>
+    <div class="form-grid">
+      {{ select_field('move_stage', 'Этап переезда', move_stages.items(), values.move_stage, errors) }}
+      {{ field('interests', 'Интересы', values, errors, limit=240) }}
+    </div>
+  </section>
+  <div class="actions"><button class="button primary" type="submit">Сохранить анкету</button><a class="button secondary" href="/neighbors">К соседям</a></div>
+</form>
+{% endblock %}
